@@ -1,3 +1,5 @@
+![Python CI](https://github.com/brimmt/p1_azure_compliance_lab/actions/workflows/ci.yml/badge.svg)
+
 # Project 1 - Azure Compliance Lab
 
 A personal engineering project using Python, Terraform,
