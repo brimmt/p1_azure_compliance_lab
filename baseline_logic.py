@@ -24,101 +24,137 @@ network_client = NetworkManagementClient(credential, os.getenv("AZURE_SUBSCRIPTI
 
  # Resource Tag Rules
 
-# RULE-001 - Enviroment Tag
-for resource in resource_client.resources.list():
-   tag = resource.tags or {}  #  <- tags are returned as dictionaires
-     
-   if 'environment' not in tag:
-        print("Failed RULE-001 |", resource.name, "is missing the environment tag");
-   else:
-        print("Passed RULE-001 |", resource.name, "has the environment tag");
 
-print("----------------------------------------------------");
-print();
+# RULE-001 - Enviroment Tag
+def check_environment_tag(resource):
+    
+        tags = resource.tags or {}  #  <- tags are returned as dictionaires
+        return {
+            "rule": "RULE-001",
+            "resource": resource.name,
+            "status": "PASS" if "environment" in tags else "FAIL",
+            "Remediation": "Add environment tag to the resource" if "environment" not in tags else "No remediation needed"
+        }
+
+
+
 
 # RULE-002 - Owner Tag
-for resource in resource_client.resources.list():
-    tag = resource.tags or {};
+def check_owner_tag(resource):
+   
+    tags = resource.tags or {};
     
-    if "owner" not in tag:
-        print("Failed RULE-002 |", resource.name, "is missing the 'owner' tag");
-    else:
-        print("Passed RULE-002 |", resource.name, "has the 'owner' tag");
+    return {
+         "rule": "RULE-002",
+         "resource": resource.name,
+         "status": "PASS" if "owner" in tags else "FAIL",
+         "Remediation": "Add owner tag to the resource" if "owner" not in tags else "No remediation needed"
+         
+    }
 
-print("----------------------------------------------------");
-print();
+
+
+
+
 
 # RULE-003 - Source Tag
-for resource in resource_client.resources.list():
-    tag = resource.tags or {};
+def check_source_tag(resource):
+    tags = resource.tags or {}
+    return {
+        "rule": "RULE-003",
+        "resource": resource.name,
+        "status": "PASS" if "source" in tags else "FAIL",
+        "Remediation": "Add source tag to the resource" if "source" not in tags else "No remediation needed"
+    }
 
-    if "source" not in tag:
-        print("Failed RULE-003 |", resource.name, "is missing the 'source' tag");
-    else:
-        print("Passed RULE-003 |", resource.name, "has the 'source' tag")
 
-print("----------------------------------------------------");
-print();
+
 
 # RULE-004 - Deleteion Protection on Storage Accounts
-for storage_account in storage_client.storage_accounts.list():
+def check_deletion_protection_blob(storage_account):
     service_properties = storage_client.blob_services.get_service_properties(
         resource_group_name=storage_account.id.split("/")[4],
         account_name=storage_account.name,
         
     )
-    if service_properties.delete_retention_policy and service_properties.delete_retention_policy.enabled:
-        print("Passed RULE-004 |", storage_account.name, "has delete protection enabled.");
-    else:
-        print("Failed RULE-004 |", storage_account.name, "is missing delete protection.");
+
+    return{
+         "rule": "RULE-004",
+         "resource": storage_account.name,
+         "status": "PASS" if service_properties.delete_retention_policy and service_properties.delete_retention_policy.enabled else "FAIL",
+         "Remediation": "Enable delete protection on the storage account" if not (service_properties.delete_retention_policy and service_properties.delete_retention_policy.enabled) else "No remediation needed"
+    }
 
     
-print("----------------------------------------------------");
-print();
 # RULE-005 - Shared Key Access
 # check shared key access for storage accounts
-for storage_account in storage_client.storage_accounts.list():
+def check_shared_key_access(storage_account):
     if storage_account.allow_shared_key_access:
-        print("Failed RULE-005 |", storage_account.name, "storage account key access must be disabled.")
+        return {
+            "rule": "RULE-005",
+            "resource": storage_account.name,
+            "status": "FAIL",
+            "Remediation": "Disable shared key access on the storage account"
+        }
     else:
-        print("Passed RULE-005 |", storage_account.name, "storage account key access is disabled.");
-
-print("----------------------------------------------------");
-print();
+        return {
+            "rule": "RULE-005",
+            "resource": storage_account.name,
+            "status": "PASS",
+            "Remediation": "No remediation needed"
+        }
 
 
 #RULE-006 - Storage account should not allow public network access
 # check virtual network
-
-for storage_account in storage_client.storage_accounts.list():
-    if storage_account.properties.public_network_access == "Enabled":
-        print("Failed RULE-006 |", storage_account.name, "allows public network access.");
-    else:
-        print("Passed RULE-006 |", storage_account.name, "does not allow public network access.");
-print("----------------------------------------------------");
-print();
-
-
-#RULE-07 - Access Tier
-
-for storage_account in storage_client.storage_accounts.list():
-    if storage_account.access_tier == "Hot":
-        print("Passed RULE-07 |", storage_account.name, "has access tier set to Hot.");
-    else:
-        print("Failed RULE-07 |", storage_account.name, "does not have access tier set to Hot.");
-
-print("----------------------------------------------------");
-print();
+def check_public_network_access(storage_account):
+     #TatiNote: Ai updated this part <- come back and review Tati
+     is_disabled = storage_account.public_network_access == "Disabled"
+     
+     return {
+          "rule": "RULE-006",
+          "resource": storage_account.name,
+          "status": "FAIL" if not is_disabled else "PASS",
+          "Remediation": "Disable public network access on the storage account" if not is_disabled else "No remediation needed"
+     }
 
 
 
+#RULE-007 - Access Tier
+def check_access_tier(storage_account):
+
+     #TatiNote: try it on my own here
+     is_hot = storage_account.access_tier == "Hot"
+     
+     return {
+          "rule": "RULE-007",
+          "resource": storage_account.name,
+          "status": "PASS" if is_hot else "FAIL",
+          "Remediation": "Set access tier to Hot" if is_hot else "No remediation needed"
+     }
 
 
 
 
+# Add to results list
+def update_results_list():
+    results = []
+    # lets add the general resources first
+    for resource in resource_client.resources.list():
+            results.append(check_environment_tag(resource))
+            results.append(check_owner_tag(resource))
+            results.append(check_source_tag(resource))
+
+    for storage_account in storage_client.storage_accounts.list():
+            results.append(check_deletion_protection_blob(storage_account))
+            results.append(check_shared_key_access(storage_account))
+            results.append(check_public_network_access(storage_account))
+            results.append(check_access_tier(storage_account))
+
+    return results
 
 
-
+print(update_results_list())
 
 
 
