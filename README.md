@@ -5,7 +5,7 @@
 # Project 1 — Azure Compliance Lab
 **Project Status: Completed (V1)**
 
-A personal engineering project and the first in my **Engineering Boot Camp series**, focused on building practical software engineering skills through hands-on development.
+A personal engineering project and the first in my Engineering Boot Camp series, focused on strengthening my software engineering skills through hands-on development and learning how different technologies and systems work together.
 
 Built with Python, Terraform, Streamlit, and the Azure SDK to evaluate Azure resources against a custom security baseline.
 
