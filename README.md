@@ -2,7 +2,7 @@
 
 # Project 1 - Azure Compliance Lab
 
-A personal engineering project using Python, Terraform, ghfhfhfhftdg
+A personal engineering project using Python, Terraform, Streamlit
 and the Azure SDK to evaluate Azure resource configurations
 against a custom security baseline.
 
